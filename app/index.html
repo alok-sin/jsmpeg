@@ -16,6 +16,12 @@
 			width: 640px;
 			height: 480px;
 		}
+		.thumb{
+			/* Always stretch the canvas to 640x480, regardless of its
+			internal size. */
+			width: 160px;
+			height: 120px;
+		}
 	</style>
 </head>
 <body>
@@ -31,27 +37,16 @@
 			<a href="http://www.apple.com/safari/">Safari</a> or Internet Explorer 10
 		</p>
 	</canvas>
-	<canvas id="videoCanvas-two" class="videoCanvas">
-		<p>
-			Please use a browser that supports the Canvas Element, like
-			<a href="http://www.google.com/chrome">Chrome</a>,
-			<a href="http://www.mozilla.com/firefox/">Firefox</a>,
-			<a href="http://www.apple.com/safari/">Safari</a> or Internet Explorer 10
-		</p>
-	</canvas>
-	<button id="webcam">Webcam</button>
-	<button id="desktop">Desktop</button>
+	<button id="webcam" port="8084"><img class="thumb">Webcam</button>
+	<button id="desktop" port="8085"><img class="thumb">Desktop</button>
 	<script type="text/javascript" src="jsmpg.js"></script>
 </body>
 <script type="text/javascript">
 	// Setup the WebSocket connection and start the player
 	var client1 = new WebSocket( 'ws://127.0.0.1:8084/' );
-	var canvas1 = document.getElementById('videoCanvas-one');
-	var player1 = new jsmpeg(client1, {canvas:canvas1});
-
-	var client2 = new WebSocket( 'ws://127.0.0.1:8085/' );
-	var canvas2 = document.getElementById('videoCanvas-two');
-	var player2 = new jsmpeg(client2, {canvas:canvas2});
+	var canvas = document.getElementById('videoCanvas-one');
+	var player = new jsmpeg(client1, {canvas:canvas});
+	var currentThumb = "webcam";
 
 	function setMostCount(){
 		// fill this up
@@ -76,12 +71,34 @@
 			}
 		});
 	}
+	function updateThumb(thumbName, interval=500) {
+		if (interval == 0)
+			$("#"+currentThumb+" img").attr("src", canvas.toDataURL());
+		else
+			setTimeout(function(){$("#"+currentThumb+" img").attr("src", canvas.toDataURL());}, interval);
+	}
 	$(document).ready(function(){
-		setMostCount()
+		setMostCount();
+		
+		//updateThumb(currentThumb);
+		setTimeout(function(){
+			$("button").each(function(){
+				$(this).trigger("click")
+			});
+		},100);
+
 		// call to update counter of videos
 		$("button").on("click", function(){
-			updateCount(vidName);
+			updateThumb(currentThumb, 0);
+			updateCount($(this).attr("id"));
 			setMostCount();
+			// set webcam image src to dataURL
+			// so it can be saved as an image
+			player.stop();
+			client1 = new WebSocket('ws://127.0.0.1:'+$(this).attr("port"));
+			player = new jsmpeg(client1, {canvas:canvas});
+			currentThumb = $(this).attr("id");
+			updateThumb(currentThumb);
 		});
 	});
 </script>
