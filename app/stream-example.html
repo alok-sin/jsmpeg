@@ -3,6 +3,7 @@
 <head>
 	<meta name="viewport" content="width=320, initial-scale=1"/>
 	<title>jsmpeg streaming</title>
+	<script type="text/javascript" src="jquery-3.1.1.min.js"></script>
 	<style type="text/css">
 		body {
 			background: #333;
@@ -38,18 +39,50 @@
 			<a href="http://www.apple.com/safari/">Safari</a> or Internet Explorer 10
 		</p>
 	</canvas>
+	<button id="webcam">Webcam</button>
+	<button id="desktop">Desktop</button>
 	<script type="text/javascript" src="jsmpg.js"></script>
-	<script type="text/javascript">
-		// Setup the WebSocket connection and start the player
-		var client1 = new WebSocket( 'ws://127.0.0.1:8084/' );
-
-		var canvas1 = document.getElementById('videoCanvas-one');
-		var player1 = new jsmpeg(client1, {canvas:canvas1});
-
-		var client2 = new WebSocket( 'ws://127.0.0.1:8085/' );
-
-		var canvas2 = document.getElementById('videoCanvas-two');
-		var player2 = new jsmpeg(client2, {canvas:canvas2});
-	</script>
 </body>
+<script type="text/javascript">
+	// Setup the WebSocket connection and start the player
+	var client1 = new WebSocket( 'ws://127.0.0.1:8084/' );
+	var canvas1 = document.getElementById('videoCanvas-one');
+	var player1 = new jsmpeg(client1, {canvas:canvas1});
+
+	var client2 = new WebSocket( 'ws://127.0.0.1:8085/' );
+	var canvas2 = document.getElementById('videoCanvas-two');
+	var player2 = new jsmpeg(client2, {canvas:canvas2});
+
+	function setMostCount(){
+		// fill this up
+		$.ajax({
+			url:"http://127.0.0.1:8082/api/get-count",  
+			type:"GET",
+			success:function(data) {
+			},
+			error:function() {
+				alert("error")
+			}
+		});
+	}
+	function updateCount(vidName) {
+		$.ajax({
+			url:"http://127.0.0.1:8082/api/update-count/"+vidName,  
+			type:"GET",
+			success:function(data) {
+			},
+			error:function() {
+				alert("error")
+			}
+		});
+	}
+	$(document).ready(function(){
+		setMostCount()
+		// call to update counter of videos
+		$("button").on("click", function(){
+			updateCount(vidName);
+			setMostCount();
+		});
+	});
+</script>
 </html>

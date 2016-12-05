@@ -58,38 +58,106 @@ function onBroadcast(thisServer, data, opts) {
 	}
 }
 
+//Express http server config
+var express = require('express');
+var app = express();
+var bodyParser = require('body-parser');
+var request = require('request');
+var streamServer = require('http').createServer(app);
+var util = require('util');
+
+app.use(express.static(__dirname + '/app'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended:true}));
+app.use(function(request, response, next){
+	response.setHeader('Access-Control-Allow-Origin', '*');
+	next();
+});
+
+streamServer.listen(STREAM_PORT);
+
+app.post("/"+STREAM_SECRET+"/:width?/:height?/:vid?", function(request, response){
+	response.connection.setTimeout(0);
+	
+	width = (request.params.width || 320)|0;
+	height = (request.params.height || 240)|0;
+
+	console.log(request.method);
+	
+	console.log(
+		'Stream Connected: ' + request.socket.remoteAddress + 
+		':' + request.socket.remotePort + ' size: ' + width + 'x' + height
+	);
+	
+	var vidServ = (typeof request.params.vid === 'undefined') ? "default" : request.params.vid;
+	console.log("capture "+vidServ);
+	request.on('data', function(data){
+		if (!(vidServ in socketServers)) {
+			initialize_funcs(vidServ)
+		}
+		socketServers[vidServ].broadcast(data, {binary:true});
+	});
+});
+
+app.get("/api/update-count/:id", function(request, response){
+	if (request.params.id in mostWatched)
+		mostWatched[request.params.id]  += 1;
+	else
+		mostWatched[request.params.id]  = 0;
+	return response.end();
+});
+
+var mostWatched = {"webcam": 0, "desktop": 0};
+app.get("/api/get-count", function(request, response){
+	return response.end(JSON.stringify(mostWatched));
+});
+
+
 // HTTP Server to accept incomming MPEG Stream
-var streamServer = require('http').createServer( function(request, response) {
-	var params = request.url.substr(1).split('/');
+// var streamServer = require('http').createServer( function(request, response) {
+// 	var params = request.url.substr(1).split('/');
 
-	if( params[0] == STREAM_SECRET ) {
-		response.connection.setTimeout(0);
+// 	if( params[0] == STREAM_SECRET ) {
+// 		response.connection.setTimeout(0);
 		
-		width = (params[1] || 320)|0;
-		height = (params[2] || 240)|0;
-		
-		console.log(
-			'Stream Connected: ' + request.socket.remoteAddress + 
-			':' + request.socket.remotePort + ' size: ' + width + 'x' + height
-		);
-		
-		var vidServ = (typeof params[3] === 'undefined') ? "default" : params[3];
-		console.log("capture "+vidServ);
-		request.on('data', function(data){
-			if (!(vidServ in socketServers)) {
-				initialize_funcs(vidServ)
-			}
-			socketServers[vidServ].broadcast(data, {binary:true});
-		});
-	}
-	else {
-		console.log(
-			'Failed Stream Connection: '+ request.socket.remoteAddress + 
-			request.socket.remotePort + ' - wrong secret.'
-		);
-		response.end();
-	}
-}).listen(STREAM_PORT);
+// 		width = (params[1] || 320)|0;
+// 		height = (params[2] || 240)|0;
 
-console.log('Listening for MPEG Stream on http://127.0.0.1:'+STREAM_PORT+'/<secret>/<width>/<height>');
+// 		console.log(request.method);
+		
+// 		console.log(
+// 			'Stream Connected: ' + request.socket.remoteAddress + 
+// 			':' + request.socket.remotePort + ' size: ' + width + 'x' + height
+// 		);
+		
+// 		var vidServ = (typeof params[3] === 'undefined') ? "default" : params[3];
+// 		console.log("capture "+vidServ);
+// 		request.on('data', function(data){
+// 			if (!(vidServ in socketServers)) {
+// 				initialize_funcs(vidServ)
+// 			}
+// 			socketServers[vidServ].broadcast(data, {binary:true});
+// 		});
+// 	} else {
+// 		if (request.headers["x-requested-with"] != 'XMLHttpRequest') {
+// 			console.log(
+// 				'Failed Stream Connection: '+ request.socket.remoteAddress + 
+// 				request.socket.remotePort + '.'
+// 			);
+// 		}
+// 		console.log(
+// 			'New ajax request: '+ request.socket.remoteAddress + 
+// 			request.socket.remotePort
+// 		);
+
+// 		// response.writeHead(200, {'Content-Type': 'application/json'});
+//   //   	response.end(JSON.stringify({ 'a': 1 }));
+//     	response.writeHead(200, {'Content-Type': 'text/plain'});
+//       	response.end("formOutput");
+//       	// response.end(formOutput);
+//     	// response.end();
+// 	}
+// }).listen(STREAM_PORT);
+
+console.log('Listening for MPEG Stream on http://127.0.0.1:'+STREAM_PORT+'/<secret>/<width>/<height>/<vid-name>');
 console.log('Awaiting WebSocket connections on ws://127.0.0.1:'+WEBSOCKET_PORT+'/');

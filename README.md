@@ -10,6 +10,11 @@ Some demos and more info: [phoboslab.org/log/2013/05/mpeg1-video-decoder-in-java
 
 ## API ##
 
+###setup:
+
+1. install node and npm
+
+2. Run: `npm install`
 
 ### Constructor ###
 

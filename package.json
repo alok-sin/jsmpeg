@@ -1,0 +1,25 @@
+{
+  "name": "jsmpeg",
+  "version": "1.0.0",
+  "description": "Realtime video service",
+  "main": "stream-server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alok-sin/jsmpeg.git"
+  },
+  "author": "alok",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alok-sin/jsmpeg/issues"
+  },
+  "homepage": "https://github.com/alok-sin/jsmpeg#readme",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "request": "^2.79.0",
+    "ws": "^1.1.1"
+  }
+}
