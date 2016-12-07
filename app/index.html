@@ -104,17 +104,21 @@
 			<label>Video1</label>
 			<button id="all-webcam" data-name="webcam" data-port="8084"><canvas class="thumb"></button>
 		</div>
-
-		
 		<div class="flex-item2">
 			<label>Video2</label>
 			<button id="all-desktop" data-name="desktop" data-port="8085"><canvas class="thumb"></button>
 		</div>
-
-		
 		<div class="flex-item2">
 			<label>Video3</label>
-			<button id="all-test" data-name="test" data-port="8086"><canvas class="thumb"></button>
+			<button id="all-video-3" data-name="video-3" data-port="8086"><canvas class="thumb"></button>
+		</div>
+		<div class="flex-item2">
+			<label>Video4</label>
+			<button id="all-video-4" data-name="video-4" data-port="8087"><canvas class="thumb"></button>
+		</div>
+		<div class="flex-item2">
+			<label>Video5</label>
+			<button id="all-video-5" data-name="video-5" data-port="8088"><canvas class="thumb"></button>
 		</div>
 	</div>
 	<script type="text/javascript" src="jsmpg.js"></script>
@@ -156,7 +160,9 @@
 				if (currentThumb == "") {
 					currentThumb=data[0];
 				}
+				console.log("setting "+currentThumb);
 				setCurrentThumb();
+				console.log("done setting "+currentThumb);
 			},
 			error:function() {
 				alert("error")
@@ -195,15 +201,14 @@
 			$(this).removeClass("currentThumb");
 		});
 
-		console.log(document.getElementById('most-'+currentThumb));
 		addClass(document.getElementById('most-'+currentThumb), "currentThumb");
-		console.log("adding for all`");
 		addClass(document.getElementById('all-'+currentThumb), "currentThumb");
-		console.log(document.getElementById('all-'+currentThumb));
 		// $('#most-'+currentThumb).addClass("currentThumb");	
 		// $('#all-'+currentThumb).addClass("currentThumb");
 	}
 	function addClass(el, className) {
+	  if (el == undefined)
+	  	return;
 	  if (el.classList)
 	    el.classList.add(className)
 	  else if (!hasClass(el, className)) el.className += " " + className
