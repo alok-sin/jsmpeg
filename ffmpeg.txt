@@ -4,3 +4,5 @@ ffmpeg -s 640x480 -f video4linux2 -i /dev/video0 -f mpeg1video -b:v 800k -r 30 h
 # To capture deesktop on linux
 ffmpeg -f x11grab -s 640x480 -r 30 -i :0.0  -f mpeg1video -b:v 800k http://127.0.0.1:8082/vod/640/480/desktop
 
+# to capture video from files
+ffmpeg -re -i vid.mp4 -s 640x480 -f mpeg1video http://127.0.0.1:8082/vod/640/480/vid
