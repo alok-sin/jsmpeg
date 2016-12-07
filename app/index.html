@@ -5,23 +5,65 @@
 	<title>jsmpeg streaming</title>
 	<script type="text/javascript" src="jquery-3.1.1.min.js"></script>
 	<style type="text/css">
-		body {
-			background: #333;
-			text-align: center;
-			margin-top: 10%;
-		}
 		.videoCanvas{
 			/* Always stretch the canvas to 640x480, regardless of its
 			internal size. */
 			width: 640px;
 			height: 480px;
+			float:left;
+			margin-left: 10px;
+			margin-right: 10px;
 		}
 		.thumb{
-			/* Always stretch the canvas to 640x480, regardless of its
-			internal size. */
 			width: 160px;
 			height: 120px;
 		}
+		.currentThumb {
+			border-color: red;
+			border-style: solid;
+		}
+		.flex-container1 {
+		    display: -webkit-flex;
+		    display: flex;
+		    -webkit-flex-direction: column;
+		    flex-direction: column;
+		    width: 200px;
+		    height: 650px;
+		    float:left;
+
+		}
+		.flex-item1 {
+		    width: 176px;
+		    height: 129px;
+		    margin: 10px;
+		    border-color: gray;
+		    border-width: 2px;
+		    border-style: solid;
+		}
+		.flex-container2 {
+		   	display: -webkit-flex;
+  		  	display: flex;
+		    -webkit-flex-wrap: wrap;
+		    flex-wrap: wrap;
+		    width: 400px;
+		    max-width: 80%;
+		    max-height:650px;
+		    float:left;
+
+		}
+		.flex-item2 {
+		    width: 176px;
+		    height: 135px;
+		    margin: 10px;
+		    border-color: gray;
+		    border-width: 2px;
+		    border-style: solid;
+		}
+		label{
+			margin-top: 1%;
+			margin-left: 5%;
+		}
+		
 	</style>
 </head>
 <body>
@@ -29,6 +71,25 @@
 		change this internal resolution to whatever the source provides. The size the
 		canvas is displayed on the website is dictated by the CSS style.
 	-->
+	<h1>Video Streaming Demo</h1>
+	<div class="flex-container1">
+		Most Watched<br>
+		<div class="flex-item1">
+			<label>Video1</label>
+			<button id="most-webcam" data-name="webcam" data-port="8084"><canvas class="thumb"></button>
+		</div>
+
+		<div class="flex-item1">
+			<label>Video2</label>
+			<button id="most-desktop" data-name="desktop" data-port="8085"><canvas class="thumb"></button>
+		</div>
+
+		<div class="flex-item1">
+			<label>Video3</label>
+			<button id="most-test" data-name="test" data-port="8086"><canvas class="thumb"></button>
+		</div>
+	</div>
+
 	<canvas id="videoCanvas-one" class="videoCanvas">
 		<p>
 			Please use a browser that supports the Canvas Element, like
@@ -37,23 +98,65 @@
 			<a href="http://www.apple.com/safari/">Safari</a> or Internet Explorer 10
 		</p>
 	</canvas>
-	<button id="webcam" port="8084"><img class="thumb">Webcam</button>
-	<button id="desktop" port="8085"><img class="thumb">Desktop</button>
+
+	<div class="flex-container2">		
+		<div class="flex-item2">
+			<label>Video1</label>
+			<button id="all-webcam" data-name="webcam" data-port="8084"><canvas class="thumb"></button>
+		</div>
+
+		
+		<div class="flex-item2">
+			<label>Video2</label>
+			<button id="all-desktop" data-name="desktop" data-port="8085"><canvas class="thumb"></button>
+		</div>
+
+		
+		<div class="flex-item2">
+			<label>Video3</label>
+			<button id="all-test" data-name="test" data-port="8086"><canvas class="thumb"></button>
+		</div>
+	</div>
 	<script type="text/javascript" src="jsmpg.js"></script>
 </body>
 <script type="text/javascript">
 	// Setup the WebSocket connection and start the player
-	var client1 = new WebSocket( 'ws://127.0.0.1:8084/' );
+	var client1;
 	var canvas = document.getElementById('videoCanvas-one');
-	var player = new jsmpeg(client1, {canvas:canvas});
-	var currentThumb = "webcam";
+	var player;
+	var currentThumb = "";
+	var thumbPlayers = {};
 
 	function setMostCount(){
 		// fill this up
 		$.ajax({
-			url:"http://127.0.0.1:8082/api/get-count",  
+			url:"http://128.6.13.140:8082/api/get-count",  
 			type:"GET",
 			success:function(data) {
+				data = JSON.parse(data);
+				console.log(data);
+				var count =0;
+				$(".flex-item1 button").each(function() {
+					thumbPlayers[this.id].stop();
+
+					$(this).attr({
+						"id": "most-"+data[count],
+						"data-name": $("#all-"+data[count]).data("name"),
+						"data-port": $("#all-"+data[count]).data("port")
+					});
+					$(this).prev("label").html($("#all-"+data[count]).data("name"));
+		  			count++;
+				});
+
+				$(".flex-item1 button").each(function() {
+					var thumbClient = new WebSocket('ws://128.6.13.140:'+(this.getAttribute("data-port")));
+					var thumbCanvas = $(this).find("canvas")[0];
+					thumbPlayers[this.id] = new jsmpeg(thumbClient, {canvas:thumbCanvas});
+				});
+				if (currentThumb == "") {
+					currentThumb=data[0];
+				}
+				setCurrentThumb();
 			},
 			error:function() {
 				alert("error")
@@ -62,43 +165,57 @@
 	}
 	function updateCount(vidName) {
 		$.ajax({
-			url:"http://127.0.0.1:8082/api/update-count/"+vidName,  
+			url:"http://128.6.13.140:8082/api/update-count/"+vidName,  
 			type:"GET",
 			success:function(data) {
 			},
 			error:function() {
-				alert("error")
+				alert("error");
 			}
 		});
 	}
-	function updateThumb(thumbName, interval=500) {
-		if (interval == 0)
-			$("#"+currentThumb+" img").attr("src", canvas.toDataURL());
-		else
-			setTimeout(function(){$("#"+currentThumb+" img").attr("src", canvas.toDataURL());}, interval);
+	function initilize() {
+		$("button").each(function(){
+			var thumbClient = new WebSocket('ws://128.6.13.140:'+$(this).data("port"));
+			var thumbCanvas = $(this).find("canvas")[0];
+			thumbPlayers[$(this).attr("id")] = new jsmpeg(thumbClient, {canvas:thumbCanvas});
+		});
+		$("label").each(function(){
+			$(this).html($(this).next("button").data("name"));
+		});
+		setMostCount();
+	}
+	function setCurrentThumb() {
+		if (player !== undefined) {
+			player.stop();
+		}
+		client1 = new WebSocket( 'ws://128.6.13.140:'+$("#all-"+currentThumb).data("port")+'/' );
+		player = new jsmpeg(client1, {canvas:canvas});
+		$(".currentThumb").each(function(){
+			$(this).removeClass("currentThumb");
+		});
+
+		console.log(document.getElementById('most-'+currentThumb));
+		addClass(document.getElementById('most-'+currentThumb), "currentThumb");
+		console.log("adding for all`");
+		addClass(document.getElementById('all-'+currentThumb), "currentThumb");
+		console.log(document.getElementById('all-'+currentThumb));
+		// $('#most-'+currentThumb).addClass("currentThumb");	
+		// $('#all-'+currentThumb).addClass("currentThumb");
+	}
+	function addClass(el, className) {
+	  if (el.classList)
+	    el.classList.add(className)
+	  else if (!hasClass(el, className)) el.className += " " + className
 	}
 	$(document).ready(function(){
-		setMostCount();
-		
-		//updateThumb(currentThumb);
-		setTimeout(function(){
-			$("button").each(function(){
-				$(this).trigger("click")
-			});
-		},100);
+		setTimeout(function() {initilize();},100);
 
 		// call to update counter of videos
 		$("button").on("click", function(){
-			updateThumb(currentThumb, 0);
-			updateCount($(this).attr("id"));
+			updateCount($(this).data("name"));
+			currentThumb = $(this).data("name");
 			setMostCount();
-			// set webcam image src to dataURL
-			// so it can be saved as an image
-			player.stop();
-			client1 = new WebSocket('ws://127.0.0.1:'+$(this).attr("port"));
-			player = new jsmpeg(client1, {canvas:canvas});
-			currentThumb = $(this).attr("id");
-			updateThumb(currentThumb);
 		});
 	});
 </script>
