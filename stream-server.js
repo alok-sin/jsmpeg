@@ -16,6 +16,7 @@ var width = 320,
 	height = 240;
 
 var portOffset = 0;
+var mostWatched = {};
 // Websocket Server
 var socketServers = {}
 function initialize_funcs(key) {
@@ -28,6 +29,7 @@ function initialize_funcs(key) {
 	socketServers[key].broadcast = function(data, opts) {
 		onBroadcast(this, data, opts)
 	};
+	mostWatched[key] = 0;
 	portOffset++;
 }
 
@@ -103,13 +105,23 @@ app.get("/api/update-count/:id", function(request, response){
 	if (request.params.id in mostWatched)
 		mostWatched[request.params.id]  += 1;
 	else
-		mostWatched[request.params.id]  = 0;
+		mostWatched[request.params.id]  = 1;
 	return response.end();
 });
 
-var mostWatched = {"webcam": 0, "desktop": 0};
 app.get("/api/get-count", function(request, response){
-	return response.end(JSON.stringify(mostWatched));
+	var array=[];
+	for(a in mostWatched){
+		 array.push([a,mostWatched[a]])
+	}
+	array.sort(function(a,b){return a[1] - b[1]});
+	array.reverse();
+	var arrayKeys = [];
+	for (a in array) {
+		console.log(array[a]);
+		arrayKeys.push(array[a][0]);
+	}
+	return response.end(JSON.stringify(arrayKeys));
 });
 
 
